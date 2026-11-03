@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PerchCat.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- 内置橘猫: 由 scripts/extract_assets.py 从 Swift 常量生成 -->
+    <EmbeddedResource Include="Assets\*.json" LogicalName="PerchCat.Core.Assets.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

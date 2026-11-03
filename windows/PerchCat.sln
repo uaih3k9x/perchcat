@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerchCat.Core", "PerchCat.Core\PerchCat.Core.csproj", "{93C5538E-1AD3-470A-BCAB-A937D1516076}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerchCat.Core.Tests", "PerchCat.Core.Tests\PerchCat.Core.Tests.csproj", "{14E756CB-1647-4435-B868-3028C7048CBD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerchCat", "PerchCat\PerchCat.csproj", "{06F4D2C5-722C-4152-98EF-4A93B496148C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{93C5538E-1AD3-470A-BCAB-A937D1516076}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93C5538E-1AD3-470A-BCAB-A937D1516076}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93C5538E-1AD3-470A-BCAB-A937D1516076}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93C5538E-1AD3-470A-BCAB-A937D1516076}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14E756CB-1647-4435-B868-3028C7048CBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14E756CB-1647-4435-B868-3028C7048CBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14E756CB-1647-4435-B868-3028C7048CBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14E756CB-1647-4435-B868-3028C7048CBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06F4D2C5-722C-4152-98EF-4A93B496148C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06F4D2C5-722C-4152-98EF-4A93B496148C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06F4D2C5-722C-4152-98EF-4A93B496148C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06F4D2C5-722C-4152-98EF-4A93B496148C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
