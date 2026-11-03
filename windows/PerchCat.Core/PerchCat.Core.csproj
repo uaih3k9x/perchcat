@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>PerchCat.Core</RootNamespace>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
   <ItemGroup>
     <!-- 内置橘猫: 由 scripts/extract_assets.py 从 Swift 常量生成 -->

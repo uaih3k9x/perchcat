@@ -106,3 +106,33 @@ public class PixelSpaceTests
         Assert.Equal(new Rect(0, 40, 1920, 1040), info.Visible);
     }
 }
+
+public class PixelSpaceExtrasTests
+{
+    [Fact]
+    public void AnchoredConversionKeepsSizeExactEvenWhenEdgesRoundDifferently()
+    {
+        // 脚底 y 取整点, k=1.25 时顶边落在小数像素上; 猫图的像素宽高必须仍然是整格 (cols * cellPx), 否则最近邻缩放会糊
+        var s = PixelSpace.ForDpi(120, 1080);
+        var r = new Rect(300, 71, 24 * 4, 24 * 4);
+        var px = s.ToPixelsKeepingSize(r);
+        Assert.Equal(24 * s.CellPixels, px.Width);
+        Assert.Equal(24 * s.CellPixels, px.Height);
+        Assert.Equal(375, px.Left);
+    }
+
+    [Fact]
+    public void CursorPixelsBecomePoints()
+    {
+        var s = new PixelSpace(2.0, 1000);
+        var p = s.CursorToPoint(400, 100);
+        Assert.Equal(200, p.X);
+        Assert.Equal(450, p.Y);
+    }
+
+    [Fact]
+    public void RgbaToBgraSwapsRedAndBlue()
+    {
+        Assert.Equal(new byte[] { 3, 2, 1, 4, 30, 20, 10, 255 }, Bgra.FromRgba(new byte[] { 1, 2, 3, 4, 10, 20, 30, 255 }));
+    }
+}

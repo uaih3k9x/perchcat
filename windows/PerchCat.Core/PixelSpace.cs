@@ -45,6 +45,17 @@ public sealed class PixelSpace
     public PixelRect ToPixels(Rect r) =>
         new(R(r.MinX * PixelsPerPoint), R(refH - r.MaxY * PixelsPerPoint), R(r.MaxX * PixelsPerPoint), R(refH - r.MinY * PixelsPerPoint));
 
+    /// 左上角取整, 宽高单独取整: 猫图的像素尺寸必须是整数个格子, 不能因为两条边各自舍入差一个像素.
+    public PixelRect ToPixelsKeepingSize(Rect r)
+    {
+        var left = R(r.MinX * PixelsPerPoint);
+        var top = R(refH - r.MaxY * PixelsPerPoint);
+        return new PixelRect(left, top, left + R(r.Width * PixelsPerPoint), top + R(r.Height * PixelsPerPoint));
+    }
+
+    /// 光标的物理像素 -> 点.
+    public Pt CursorToPoint(int px, int py) => new(ToPointX(px), ToPointY(py));
+
     public (int X, int Y) ToPixels(double x, double y) => (R(x * PixelsPerPoint), R(refH - y * PixelsPerPoint));
 
     public ScreenInfo ToScreen(RawMonitor m) => new(ToPoints(m.Frame), ToPoints(m.Work));
