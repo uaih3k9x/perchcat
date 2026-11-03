@@ -10,7 +10,14 @@
     <RootNamespace>PerchCat</RootNamespace>
     <AssemblyName>PerchCat</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <NoWarn>$(NoWarn);WFAC010</NoWarn> <!-- DPI 感知放在 app.manifest 里 (WPF 的做法) -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- publish 输出落在 windows/publish (已 gitignore) -->
+    <PublishDir>$(MSBuildThisFileDirectory)..\publish\</PublishDir>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>none</DebugType>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\PerchCat.Core\PerchCat.Core.csproj" />
