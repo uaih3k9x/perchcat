@@ -327,6 +327,23 @@ struct FullscreenFloorTests {
         #expect(windowPlatforms(ps).isEmpty)                     // 也不能站在刘海下面的窗口顶上
     }
 
+    // 11-19 实测 (14" 刘海屏, 终端全屏): 主窗口顶边离屏顶 65 点, 另有一条 72 点高的工具栏窗口压在上面.
+    @Test func realNotchFullscreenWithDeepTopInsetCounts() {
+        let ps = build([win(2, x: 0, top: 945, w: 1512, h: 72), win(1, x: 0, top: 917, w: 1512, h: 917)])
+        #expect(floorTop(ps, lo: 0) == 0)
+        #expect(windowPlatforms(ps).isEmpty)
+    }
+
+    @Test func fullscreenWindowWithoutToolbarIsNotAPlatform() {
+        let ps = build([win(1, x: 0, top: 917, w: 1512, h: 917)])
+        #expect(floorTop(ps, lo: 0) == 0)
+        #expect(windowPlatforms(ps).isEmpty)                     // 全屏窗口顶上不站
+    }
+
+    @Test func fullWidthStripAtBottomIsNotFullscreen() {
+        #expect(floorTop(build([win(1, x: 0, top: 300, w: 1512, h: 300)]), lo: 0) == 56)
+    }
+
     @Test func maximizedWindowAboveDockKeepsFloor() {
         #expect(floorTop(build([win(1, x: 0, top: 944, w: 1512, h: 888)]), lo: 0) == 56)
     }

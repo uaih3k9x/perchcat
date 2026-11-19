@@ -6,6 +6,7 @@ import CoreGraphics
 /// 窗口平台和跨屏的可调常量.
 public enum PlatformTuning {
     public static let menuBarSafe = 40.0        // 平台顶边离屏幕顶至少这么多点 (每块屏都有菜单栏)
+    public static let fullscreenMinCover = 0.8  // 贴屏底、满宽, 且高度过屏高这么多才算全屏
     public static let minHeight = 40.0          // 比这矮的窗口不能站 (仍会挡住后面的窗口)
     public static let crossChance = 0.5         // 想跳的时候, 这个概率允许选别的屏上的目标
     public static let systemBundles: Set<String> = [   // 不算窗口, 既不能站也不挡人
@@ -68,6 +69,7 @@ public func buildPlatforms(windows: [WindowInfo], ownPID: Int32, screens: [Scree
               !PlatformTuning.systemBundles.contains(w.bundleID ?? ""),
               let s = homeScreen(w.rect, screens) else { continue }
         let r = w.rect.intersection(s.frame)
+        if isFullscreen(w, on: s, ownPID: ownPID) { front.append(r); continue }   // 全屏窗口顶上不站
         let top = Double(r.maxY)
         let screenTop = Double(s.frame.maxY)
         if Double(r.height) >= PlatformTuning.minHeight, top > Double(s.visible.minY) + 4,
@@ -82,14 +84,15 @@ public func buildPlatforms(windows: [WindowInfo], ownPID: Int32, screens: [Scree
     return out
 }
 
-/// 窗口铺满整块屏 (刘海屏全屏时顶上留出菜单栏高度): 这时 Dock 藏着, visibleFrame 却可能还留着它的高度.
-/// 最大化的窗口停在 Dock 上方, 不算.
+/// 窗口铺满整块屏: 这时 Dock 藏着, visibleFrame 却可能还留着它的高度.
+/// 刘海屏全屏时顶上留的不止菜单栏 (实测终端留 65 点, 工具栏另成一个窗口), 所以顶边只要求过屏高的 80%.
+/// 最大化的窗口停在 Dock 上方 (底边不贴屏底), 不算.
 func isFullscreen(_ w: WindowInfo, on s: ScreenInfo, ownPID: Int32) -> Bool {
     guard w.layer == 0, w.alpha > 0.05, w.pid != ownPID,
           !PlatformTuning.systemBundles.contains(w.bundleID ?? "") else { return false }
     return w.rect.minX <= s.frame.minX + 1 && w.rect.maxX >= s.frame.maxX - 1
         && w.rect.minY <= s.frame.minY + 1 && w.rect.minY >= s.frame.minY - 1
-        && Double(w.rect.maxY) >= Double(s.frame.maxY) - PlatformTuning.menuBarSafe
+        && Double(w.rect.height) >= Double(s.frame.height) * PlatformTuning.fullscreenMinCover
 }
 
 /// 和窗口重叠面积最大的屏.
