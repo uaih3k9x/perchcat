@@ -161,6 +161,12 @@ public struct ScruffSheet {
         ((skin as NSString).deletingLastPathComponent as NSString).appendingPathComponent("pet-scruff.json")
     }
 
+    /// 戴配饰时的拎起帧: pet-scruff@配饰.json
+    public static func path(besideSkin skin: String, accessory: String?) -> String {
+        guard let accessory else { return path(besideSkin: skin) }
+        return ((skin as NSString).deletingLastPathComponent as NSString).appendingPathComponent("pet-scruff@\(accessory).json")
+    }
+
     /// 文件不存在返回 nil; 存在但坏了才抛错.
     public static func load(path: String) throws -> ScruffSheet? {
         guard let data = FileManager.default.contents(atPath: path) else { return nil }

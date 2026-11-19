@@ -23,32 +23,39 @@ let crossChance = Double(arg("--cross-chance") ?? "") ?? PlatformTuning.crossCha
 let trace = CommandLine.arguments.contains("--trace")
 let startPos = arg("--start")?.split(separator: ",").compactMap { Double($0) }
 
-let skin: Skin
-do { skin = try skinPath.map { try Skin.load(path: $0) } ?? Skin.parse(json: builtinSkinJSON) } catch {
+let baseSkin: Skin
+do { baseSkin = try skinPath.map { try Skin.load(path: $0) } ?? Skin.parse(json: builtinSkinJSON) } catch {
     FileHandle.standardError.write(Data("perchcat: \(error)\n".utf8))
     exit(1)
 }
 
 /// 拎起帧在皮肤同目录. 没有就退回现有姿势, 坏了也不影响猫.
-let shakeSheet: ShakeSheet? = {
+/// 戴配饰时优先读 "pet-shake@配饰.json", 没有就用原版.
+func loadShake(accessory: String?) -> ShakeSheet? {
     do {
         guard let skinPath else { return try ShakeSheet.parse(Data(builtinShakeJSON.utf8)) }
-        return try ShakeSheet.load(path: ShakeSheet.path(besideSkin: skinPath))
+        let p = pickSheetPath(base: ShakeSheet.path(besideSkin: skinPath),
+                              variant: accessory.map { ShakeSheet.path(besideSkin: skinPath, accessory: $0) },
+                              exists: { FileManager.default.fileExists(atPath: $0) })
+        return try ShakeSheet.load(path: p)
     } catch {
         fputs("抖毛表读取失败, 退回眯眼坐着: \(error)\n", stderr)
         return nil
     }
-}()
+}
 
-let scruff: ScruffSheet? = {
+func loadScruff(accessory: String?) -> ScruffSheet? {
     do {
         guard let skinPath else { return try ScruffSheet.parse(Data(builtinScruffJSON.utf8)) }
-        return try ScruffSheet.load(path: ScruffSheet.path(besideSkin: skinPath))
+        let p = pickSheetPath(base: ScruffSheet.path(besideSkin: skinPath),
+                              variant: accessory.map { ScruffSheet.path(besideSkin: skinPath, accessory: $0) },
+                              exists: { FileManager.default.fileExists(atPath: $0) })
+        return try ScruffSheet.load(path: p)
     } catch {
         FileHandle.standardError.write(Data("perchcat: \(error)\n".utf8))
         return nil
     }
-}()
+}
 
 enum MouseEvent { case down, drag, up }
 
@@ -136,6 +143,11 @@ final class Controller: NSObject, NSMenuDelegate {
     var tracker = ThrowTracker()
     var upMisses = 0                        // 连续几次看到键已松开但还没收到 mouseUp
     let ownPID = ProcessInfo.processInfo.processIdentifier
+    /// 当前戴的配饰记在用户偏好里, 重启后保持
+    var skin: Skin = baseSkin.wearing(UserDefaults.standard.string(forKey: "accessory"))
+    var accessoryItems: [NSMenuItem] = []
+    lazy var shakeSheet: ShakeSheet? = loadShake(accessory: skin.wornAccessory)
+    lazy var scruff: ScruffSheet? = loadScruff(accessory: skin.wornAccessory)
     var catW: Double { Double(skin.width) * scale }
     var catH: Double { Double(skin.height) * scale }
 
@@ -173,6 +185,20 @@ final class Controller: NSObject, NSMenuDelegate {
         }
         hideItem = add("藏起来", #selector(toggleHidden))
         autoStartItem = add("开机自启", #selector(toggleAutoStart))
+        if !baseSkin.accessories.isEmpty {
+            let sub = NSMenu()
+            for name in [nil] + baseSkin.accessoryNames.map(Optional.some) {
+                let m = NSMenuItem(title: name.flatMap { baseSkin.accessories[$0]?.label } ?? "不戴",
+                                   action: #selector(chooseAccessory(_:)), keyEquivalent: "")
+                m.target = self
+                m.representedObject = name
+                sub.addItem(m)
+                accessoryItems.append(m)
+            }
+            let parent = NSMenuItem(title: "配饰", action: nil, keyEquivalent: "")
+            parent.submenu = sub
+            menu.addItem(parent)
+        }
         menu.addItem(.separator())
         _ = add("退出", #selector(quit), key: "q")
         item.menu = menu
@@ -183,6 +209,17 @@ final class Controller: NSObject, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         hideItem?.title = hidden ? "显示" : "藏起来"
         autoStartItem?.state = agent.isInstalled ? .on : .off
+        for m in accessoryItems { m.state = (m.representedObject as? String) == skin.wornAccessory ? .on : .off }
+    }
+
+    @objc func chooseAccessory(_ sender: NSMenuItem) {
+        let name = sender.representedObject as? String
+        skin = baseSkin.wearing(name)
+        UserDefaults.standard.set(skin.wornAccessory, forKey: "accessory")
+        shakeSheet = loadShake(accessory: skin.wornAccessory)
+        scruff = loadScruff(accessory: skin.wornAccessory)
+        images.removeAll()      // 帧缓存按姿势名存, 换装后要重画
+        render()
     }
 
     @objc func quit() { NSApp.terminate(nil) }

@@ -4,14 +4,39 @@ public struct SkinError: Error, CustomStringConvertible {
     public let description: String
 }
 
+/// 配饰: 一套覆盖姿势. 戴上时这些姿势替换皮肤里的同名姿势, 其余不变.
+public struct Accessory {
+    public let label: String
+    public let poses: [String: [String]]
+}
+
 /// 像素皮肤: 字符调色板 + 命名姿势 (每个姿势是等宽字符行, "." 透明).
 public struct Skin {
     public let palette: [Character: (r: UInt8, g: UInt8, b: UInt8)]
-    public let poses: [String: [String]]
+    public private(set) var poses: [String: [String]]
     public let width: Int
     public let height: Int
     /// 脚底到图片底边隔了几行 (按 stand 算), 用来把脚对齐平台线.
     public let footInset: Int
+    /// 可选配饰. 皮肤 JSON 里的 "accessories": {"名字": {"label": "菜单显示", "poses": {...}}}
+    public var accessories: [String: Accessory] = [:]
+    /// 没戴配饰时的姿势, 用来摘下
+    var basePoses: [String: [String]] = [:]
+    public private(set) var wornAccessory: String?
+
+    public var accessoryNames: [String] { accessories.keys.sorted() }
+
+    /// 戴上某个配饰; nil 或不存在的名字 = 不戴.
+    public func wearing(_ name: String?) -> Skin {
+        var s = self
+        s.poses = basePoses
+        s.wornAccessory = nil
+        if let name, let a = accessories[name] {
+            s.poses.merge(a.poses) { _, new in new }
+            s.wornAccessory = name
+        }
+        return s
+    }
 
     public static func load(path: String) throws -> Skin {
         guard let data = FileManager.default.contents(atPath: path) else {
@@ -36,8 +61,26 @@ public struct Skin {
             throw SkinError(description: "\(source) 姿势 \(name) 尺寸与 stand 不一致")
         }
         let lastInk = stand.lastIndex { $0.contains { $0 != "." } } ?? stand.count - 1
-        return Skin(palette: palette, poses: poses, width: w, height: stand.count,
-                    footInset: stand.count - 1 - lastInk)
+        var accessories: [String: Accessory] = [:]
+        for (name, raw) in obj["accessories"] as? [String: Any] ?? [:] {
+            guard let o = raw as? [String: Any], let ap = o["poses"] as? [String: [String]] else {
+                throw SkinError(description: "\(source) 配饰 \(name) 需要 {\"label\":...,\"poses\":{...}}")
+            }
+            for (pose, rows) in ap {
+                if rows.count != stand.count || rows.contains(where: { $0.count != w }) {
+                    throw SkinError(description: "\(source) 配饰 \(name) 的姿势 \(pose) 尺寸与 stand 不一致")
+                }
+                if let ch = rows.joined().first(where: { $0 != "." && palette[$0] == nil }) {
+                    throw SkinError(description: "\(source) 配饰 \(name) 用了调色板里没有的颜色 \(ch)")
+                }
+            }
+            accessories[name] = Accessory(label: o["label"] as? String ?? name, poses: ap)
+        }
+        var skin = Skin(palette: palette, poses: poses, width: w, height: stand.count,
+                        footInset: stand.count - 1 - lastInk)
+        skin.accessories = accessories
+        skin.basePoses = poses
+        return skin
     }
 
     /// "walk3@half" -> 有就用, 没有退回 "walk3", 再退回 stand.
@@ -50,6 +93,12 @@ public struct Skin {
 
     /// RGBA8 (非预乘之前的直通色, 不透明像素 alpha=255).
     public func rgba(_ rows: [String]) -> [UInt8] { rgbaPixels(rows, width: width, palette: palette) }
+}
+
+/// 配饰版的整张图有就用, 没有退回原版.
+public func pickSheetPath(base: String, variant: String?, exists: (String) -> Bool) -> String {
+    if let variant, exists(variant) { return variant }
+    return base
 }
 
 /// 不指定 --skin 时读这里. 皮肤和同目录的 pet-scruff.json, pet-shake.json 都不随代码发布.
@@ -72,6 +121,12 @@ public struct ShakeSheet {
 
     public static func path(besideSkin skin: String) -> String {
         (skin as NSString).deletingLastPathComponent + "/pet-shake.json"
+    }
+
+    /// 戴配饰时的抖毛表: pet-shake@配饰.json
+    public static func path(besideSkin skin: String, accessory: String?) -> String {
+        guard let accessory else { return path(besideSkin: skin) }
+        return (skin as NSString).deletingLastPathComponent + "/pet-shake@\(accessory).json"
     }
 
     /// 文件不存在返回 nil (退回眯眼坐着); 存在但坏了报错.
